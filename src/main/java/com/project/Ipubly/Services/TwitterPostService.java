@@ -15,9 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.project.Ipubly.Model.usersEntity;
 import com.project.Ipubly.Repository.FindUsersRepository;
-import com.project.Ipubly.Services.regenareteTokenService;
 
 @Service
 

@@ -1,5 +1,5 @@
 package com.project.Ipubly.Model;
-
+import com.project.Ipubly.Model.Enum.Provider;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,28 +10,38 @@ import java.util.UUID;
 @Entity
 @Data
 @NoArgsConstructor
-@Table (name = "users")
-public class usersEntity {
+@Table (name = "oauth_tokens")
+public class authToken {
     @Id
     @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    @Column(name = "name", nullable = false)
-    private String name;
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
 
-    @Column(name = "email", nullable = false, unique = true)
-    private String email;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "provider", nullable = false, length = 50)
+    private Provider provider;
 
-    @Column(name = "password", nullable = false)
-    private String password;
+    @Column(name = "access_token", nullable = false)
+    private String accessToken;
+
+    @Column(name = "refresh_token")
+    private String refreshToken;
+
+    @Column(name = "scope")
+    private String scope;
+
+    @Column(name = "expires_at", nullable = false)
+    private OffsetDateTime expiresAt;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
+
 
     @PrePersist
     protected void onCreate() {
@@ -40,9 +50,9 @@ public class usersEntity {
     }
 
     @PreUpdate
+
     protected void onUpdate() {
         this.updatedAt = OffsetDateTime.now();
     }
-
 
 }

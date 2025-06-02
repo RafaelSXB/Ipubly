@@ -2,7 +2,7 @@ package com.project.Ipubly.Services;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.project.Ipubly.Repository.FindUsersRepository;
-import com.project.Ipubly.Model.usersEntity;
+
 import java.util.Optional;
 
 @Service

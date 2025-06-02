@@ -1,5 +1,6 @@
 package com.project.Ipubly.Services;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -16,17 +17,16 @@ public class GeminiApiService {
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(GeminiApiService.class);
     private final String apikey;
     private final String url;
-    private final RestTemplate restTemplate;
 
     public GeminiApiService(@Value("${deepseek.apikey}") String apikey,
-            @Value("${deepseek.base-url}") String url, RestTemplate restTemplate) {
-        this.restTemplate = new RestTemplate();
+            @Value("${deepseek.base-url}") String url) {
         this.apikey = apikey;
         this.url = url;
 
     }
-
+ 
     protected String generatePostGeminini() {
+        RestTemplate restTemplate = new RestTemplate();
         Thread.currentThread().setName("GeminiApiService");
         logger.info("Iniciando a geração de post com Gemini API");
         try {

@@ -18,7 +18,7 @@ import com.project.Ipubly.Services.schedulerServices.*;
 @Configuration
 public class QuartzConfig {
 
-    @Bean
+
     public JobDetail jobDetailTeste() {
         return JobBuilder.newJob(MeuJobTeste.class)
                 .withIdentity("jobTeste")
@@ -26,7 +26,7 @@ public class QuartzConfig {
                 .build();
     }
 
-    @Bean
+
     public JobDetail refresherJobDetail() {
         return JobBuilder.newJob(TriggerRefresherJob.class)
                 .withIdentity("refresherJob")
@@ -34,27 +34,27 @@ public class QuartzConfig {
                 .build();
     }
 
-    @Bean
+
     public Trigger refresherTrigger(JobDetail refresherJobDetail) {
         return TriggerBuilder.newTrigger()
                 .forJob(refresherJobDetail)
                 .withIdentity("refresherTrigger")
-                .withSchedule(CronScheduleBuilder.dailyAtHourAndMinute(0, 0)) // meia-noite
+                .withSchedule(CronScheduleBuilder.dailyAtHourAndMinute(0, 0))
                 .build();
             }
-    @Bean
+
     public Trigger startTrigger(@Qualifier("refresherJobDetail") JobDetail refreserJobDetail) {
         return TriggerBuilder.newTrigger()
                 .forJob(refreserJobDetail)
-                .withIdentity("startTrigger").startNow() // Inicia imediatamente
+                .withIdentity("startTrigger").startNow()
                 .build();
     }
 
-    @Bean
+
     public Trigger startTriggeTester(@Qualifier("jobDetailTeste") JobDetail jobDetailTeste) {
         return TriggerBuilder.newTrigger()
                 .forJob(jobDetailTeste)
-                .withIdentity("startTrigger2").startNow() // Inicia imediatamente
+                .withIdentity("startTrigger2").startNow()
                 .build();
     }
  
