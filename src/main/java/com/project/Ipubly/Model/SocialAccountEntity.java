@@ -1,40 +1,40 @@
 package com.project.Ipubly.Model;
+
 import com.project.Ipubly.Model.Enum.Provider;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.GenericGenerator;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
+@Table(name = "social_accounts")
 @Data
 @NoArgsConstructor
-@Table (name = "oauth_tokens")
-public class authToken {
+public class SocialAccountEntity {
+
     @Id
     @GeneratedValue(generator = "uuid2")
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    @Column(name = "user_id", nullable = false)
-    private UUID userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private UserEntity user_id;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "oauth_token_id", nullable = false)
+    private AuthTokenEntity oauthToken;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "provider", nullable = false, length = 50)
     private Provider provider;
 
-    @Column(name = "access_token", nullable = false)
-    private String accessToken;
+    @Column(name = "name", nullable = false)
+    private String name;
 
-    @Column(name = "refresh_token")
-    private String refreshToken;
-
-    @Column(name = "scope")
-    private String scope;
-
-    @Column(name = "expires_at", nullable = false)
-    private OffsetDateTime expiresAt;
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
@@ -42,17 +42,17 @@ public class authToken {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
-
     @PrePersist
     protected void onCreate() {
         this.createdAt = OffsetDateTime.now();
-        this.updatedAt = this.createdAt;
+        this.updatedAt = OffsetDateTime.now();
+        if (this.isActive == null) {
+            this.isActive = true;
+        }
     }
 
     @PreUpdate
-
     protected void onUpdate() {
         this.updatedAt = OffsetDateTime.now();
     }
-
 }

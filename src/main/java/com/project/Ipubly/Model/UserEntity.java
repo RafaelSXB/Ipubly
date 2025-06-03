@@ -5,16 +5,17 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 import java.time.OffsetDateTime;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
 @Data
 @NoArgsConstructor
 @Table (name = "users")
-public class usersEntity {
+public class UserEntity {
     @Id
     @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
@@ -44,5 +45,16 @@ public class usersEntity {
         this.updatedAt = OffsetDateTime.now();
     }
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<AuthTokenEntity> oauthTokens = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<SocialAccount> socialAccounts = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<PostTemplate> postTemplates = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<PostContent> postContents = new HashSet<>();
 
 }
