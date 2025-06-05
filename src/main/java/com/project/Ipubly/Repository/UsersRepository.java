@@ -1,4 +1,5 @@
 package com.project.Ipubly.Repository;
+import com.project.Ipubly.Model.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 import java.util.UUID;
@@ -6,9 +7,9 @@ import java.util.UUID;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface FindUsersRepository extends JpaRepository<usersEntity, UUID> {
+public interface UsersRepository extends JpaRepository<UserEntity, UUID> {
     
 
-    Optional<usersEntity> findByUsername(String username);
+    Optional<UserEntity> findByUsername(String username);
     
 }
