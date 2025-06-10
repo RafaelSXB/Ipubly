@@ -1,25 +1,12 @@
 package com.project.Ipubly.Services;
 
-import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.RequestParam;
-
-import com.project.Ipubly.Services.schedulerServices.BaseJob;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.MediaType;
-import org.springframework.web.client.RestTemplate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
+
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -31,13 +18,11 @@ import org.quartz.TriggerKey;
 import org.quartz.TriggerBuilder;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.impl.matchers.GroupMatcher;
-import org.slf4j.LoggerFactory;
-import com.project.Ipubly.Services.GeminiApiService;
 
 @Component
-public class schedulerServices {
+public class schedulerService {
 
-    private static final Logger logger = Logger.getLogger(schedulerServices.class.getName());
+    private static final Logger logger = Logger.getLogger(schedulerService.class.getName());
 
     @Autowired
     private TwitterSearchService twitterSearchService;
@@ -54,7 +39,7 @@ public class schedulerServices {
     @Value("${deepseek.base-url}")
     private String url;
 
-    public abstract class BaseJob implements Job {
+    /*public abstract class BaseJob implements Job {
         protected void executeTask(String jobName) {
             logger.info("\n Iniciando tarefa: " + jobName);
             int sleepTime = 1000;
@@ -115,11 +100,7 @@ public class schedulerServices {
 
                     logger.info("Nova trigger para jobTeste: " + cron);
 
-                    Trigger trigger = TriggerBuilder.newTrigger()
-                            .withIdentity("trigger" + i)
-                            .forJob(targetJobKey)
-                            .withSchedule(CronScheduleBuilder.cronSchedule(cron))
-                            .build();
+                    Trigger trigger = TriggerBuilder.newTrigger().withIdentity("trigger" + i).forJob(targetJobKey).withSchedule(CronScheduleBuilder.cronSchedule(cron)).build();
 
                     scheduler.scheduleJob(trigger);
                 }
@@ -143,5 +124,5 @@ public class schedulerServices {
                     return 12;
             }
         }
-    }
+    } */
 }

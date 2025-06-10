@@ -3,7 +3,6 @@ package com.project.Ipubly.Model;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.GenericGenerator;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -18,6 +17,9 @@ public class UserEntity {
     @GeneratedValue(generator = "uuid2")
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
+
+    @Column(name = "username", nullable = false, unique = true)
+    private String username;
 
     @Column(name = "name", nullable = false)
     private String name;
@@ -49,12 +51,12 @@ public class UserEntity {
     private Set<AuthTokenEntity> oauthTokens = new HashSet<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<SocialAccount> socialAccounts = new HashSet<>();
+    private Set<SocialAccountEntity> socialAccounts = new HashSet<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<PostTemplate> postTemplates = new HashSet<>();
+    private Set<PostTemplateEntity> postTemplates = new HashSet<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<PostContent> postContents = new HashSet<>();
+    private Set<PostContentEntity> postContents = new HashSet<>();
 
 }

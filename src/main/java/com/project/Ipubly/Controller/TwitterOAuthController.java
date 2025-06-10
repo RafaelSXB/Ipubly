@@ -1,5 +1,7 @@
 package com.project.Ipubly.Controller;
 
+import com.project.Ipubly.Model.UserEntity;
+import com.project.Ipubly.Repository.UsersRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -13,7 +15,6 @@ import org.springframework.web.servlet.view.RedirectView;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.project.Ipubly.Repository.FindUsersRepository;
 import com.project.Ipubly.Services.regenareteTokenService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -34,7 +35,7 @@ public class TwitterOAuthController {
     private String redirectUri;
 
     @Autowired
-    private  FindUsersRepository FindUsersRepository;
+    private UsersRepository UsersRepository;
 
     @Autowired
     private regenareteTokenService regenareteTokenService;
@@ -60,7 +61,7 @@ public class TwitterOAuthController {
     @GetMapping("/twitter/callback")
     public ResponseEntity<String> twitterCallback(@RequestParam("code") String code) {
         String tokenUrl = "https://api.twitter.com/2/oauth2/token";
-        usersEntity user = new usersEntity();
+        UserEntity user = new UserEntity();
         
 
         RestTemplate restTemplate = new RestTemplate();
@@ -97,7 +98,7 @@ public class TwitterOAuthController {
             System.out.println(tokenNew.get("expires_in"));
 
         
-            regenareteTokenService.addNewToken(tokenNew.get("access_token").asText(), tokenNew.get("refresh_token").asText(), expire);
+          /*  regenareteTokenService.addNewToken(tokenNew.get("access_token").asText(), tokenNew.get("refresh_token").asText(), expire);*/
 
         } catch (JsonProcessingException e) {
             e.printStackTrace();

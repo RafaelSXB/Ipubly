@@ -20,7 +20,7 @@ public class SocialAccountEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private UserEntity user_id;
+    private UserEntity user;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "oauth_token_id", nullable = false)

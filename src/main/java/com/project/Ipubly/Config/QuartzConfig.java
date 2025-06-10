@@ -1,24 +1,15 @@
 package com.project.Ipubly.Config;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.quartz.*;
-import org.quartz.impl.matchers.GroupMatcher;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import com.project.Ipubly.Services.schedulerServices.*;
+import com.project.Ipubly.Services.schedulerService.*;
 
 @Configuration
 public class QuartzConfig {
 
-
+/*
     public JobDetail jobDetailTeste() {
         return JobBuilder.newJob(MeuJobTeste.class)
                 .withIdentity("jobTeste")
@@ -57,5 +48,5 @@ public class QuartzConfig {
                 .withIdentity("startTrigger2").startNow()
                 .build();
     }
- 
+ */
 }

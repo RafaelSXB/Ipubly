@@ -19,7 +19,7 @@ public class PostTemplateEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private UserEntity user_id;
+    private UserEntity user;
 
     @Column(name = "name", nullable = false)
     private String name;

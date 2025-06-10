@@ -1,5 +1,5 @@
 package com.project.Ipubly.Services;
-import com.project.Ipubly.Repository.FindUsersRepository;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Optional;
 import java.util.Base64;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -22,11 +23,11 @@ import org.springframework.http.HttpEntity;
 @Service
 public class regenareteTokenService {
 
-    @Autowired
-    private  FindUsersRepository FindUsersRepository;
-   
-      public String addNewToken(String token, String regenate, Long expire) {
-      Optional<usersEntity> users = FindUsersRepository.findByUsername("ADMIN");
+    /*@Autowired
+    private FindUsersRepository FindUsersRepository;
+
+    public String addNewToken(String token, String regenate, Long expire) {
+        Optional<usersEntity> users = FindUsersRepository.findByUsername("ADMIN");
         if (users.isPresent()) {
             usersEntity user = users.get();
             user.setAPITOKEN(token);
@@ -39,12 +40,12 @@ public class regenareteTokenService {
         return "User not found";
     }
 
-  public ArrayList<String> renewActulToken(String client, String clientSecret, String username) {
+    public ArrayList<String> renewActulToken(String client, String clientSecret, String username) {
         Optional<usersEntity> users = FindUsersRepository.findByUsername(username);
 
-        if(users.isPresent() && users.get().getEXPIRE() < System.currentTimeMillis()) {
-             System.out.println("Entou aqui");
-          RestTemplate restTemplate = new RestTemplate();
+        if (users.isPresent() && users.get().getEXPIRE() < System.currentTimeMillis()) {
+            System.out.println("Entou aqui");
+            RestTemplate restTemplate = new RestTemplate();
             String url = "https://api.twitter.com/2/oauth2/token";
             HttpHeaders headers = new HttpHeaders();
             String credentials = client + ":" + clientSecret;
@@ -59,35 +60,35 @@ public class regenareteTokenService {
             HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
             ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
             System.out.println("Response: " + response.getBody());
-             Long expire = new Date().getTime();
+            Long expire = new Date().getTime();
 
-               
-        try {
-            JsonNode tokenNew = JsonMapper.builder().build().readTree(response.getBody());
-            Long expireTime = tokenNew.get("expires_in").asLong() * 1000;
-            expire += expireTime;
-            expire -= 600000L;
 
-            usersEntity user = users.get();
-            user.setAPITOKEN(tokenNew.get("access_token").asText());
-            user.setAPIREFRESHTOKEN(tokenNew.get("refresh_token").asText());
-            user.setEXPIRE(expire);
-            FindUsersRepository.save(user);
+            try {
+                JsonNode tokenNew = JsonMapper.builder().build().readTree(response.getBody());
+                Long expireTime = tokenNew.get("expires_in").asLong() * 1000;
+                expire += expireTime;
+                expire -= 600000L;
 
-            ArrayList<String> returnUser = new ArrayList<>();      
+                usersEntity user = users.get();
+                user.setAPITOKEN(tokenNew.get("access_token").asText());
+                user.setAPIREFRESHTOKEN(tokenNew.get("refresh_token").asText());
+                user.setEXPIRE(expire);
+                FindUsersRepository.save(user);
 
-            returnUser.add(user.getAPITOKEN());
-            returnUser.add(user.getAPIREFRESHTOKEN());
+                ArrayList<String> returnUser = new ArrayList<>();
 
-           
-            return returnUser;
+                returnUser.add(user.getAPITOKEN());
+                returnUser.add(user.getAPIREFRESHTOKEN());
 
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
+
+                return returnUser;
+
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+
+
         }
-       
-           
-        }
-        return new ArrayList<>(); 
-    }
+        return new ArrayList<>();
+    } */
 }

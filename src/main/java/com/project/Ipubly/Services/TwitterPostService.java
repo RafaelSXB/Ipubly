@@ -1,5 +1,6 @@
 package com.project.Ipubly.Services;
 
+import com.project.Ipubly.Repository.UsersRepository;
 import com.twitter.clientlib.model.TweetCreateRequest;
 import com.twitter.clientlib.TwitterCredentialsOAuth2;
 import com.twitter.clientlib.api.TwitterApi;
@@ -15,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.project.Ipubly.Repository.FindUsersRepository;
 
 @Service
 
@@ -30,7 +30,6 @@ public class TwitterPostService {
     @Value("${twitter.api.secret}")
     private String apiSecret;
 
-    private String accessToken;
 
     @Value("${twitter.access.secret}")
     private String accessSecret;
@@ -41,7 +40,7 @@ public class TwitterPostService {
     @Value("${twitter.acess.client.secret}")
     private String clientSecret;
 
-    private String refreString;
+
 
     @Autowired
     private regenareteTokenService regenareteTokenService;
@@ -50,11 +49,11 @@ public class TwitterPostService {
     private valideTokenService valideTokenService;
 
     @Autowired
-    private FindUsersRepository FindUsersRepository;
+    private UsersRepository usersRepository;
 
-    public String postarTweet(String texto) {
+ /*    public String postarTweet(String texto) {
 
-        if (!valideTokenService.validateToken("ADMIN")) {
+       if (!valideTokenService.validateToken("ADMIN")) {
             ArrayList<String> user = regenareteTokenService.renewActulToken(client, clientSecret, "ADMIN");
             if (user.isEmpty()) {
 
@@ -99,5 +98,5 @@ public class TwitterPostService {
         } catch (Exception e) {
             throw new RuntimeException("Erro inesperado: " + e.getMessage(), e);
         }
-    }
+    } */
 }
