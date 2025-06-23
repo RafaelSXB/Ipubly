@@ -19,7 +19,7 @@ import org.quartz.TriggerBuilder;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.impl.matchers.GroupMatcher;
 
-@Component
+
 public class schedulerService {
 
     private static final Logger logger = Logger.getLogger(schedulerService.class.getName());
