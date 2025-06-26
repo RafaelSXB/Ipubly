@@ -2,6 +2,11 @@ package com.project.Ipubly.Config;
 
 
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.util.JSONPObject;
+import com.fasterxml.jackson.databind.util.JSONWrappedObject;
 import com.project.Ipubly.Services.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -18,6 +23,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Map;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -56,7 +62,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         } catch (Exception e) {
 
-            System.err.println("Invalid JWT token: " + e.getMessage());
+            Map<String, Object> errorDetails = Map.of(
+                    "error", "Token inválido ou expirado",
+                    "message", e.getMessage()
+            );
+           JsonNode errorDetailsJson  =  new ObjectMapper().valueToTree(errorDetails);
+            response.getOutputStream().write(errorDetailsJson.toString().getBytes());
+            response.setContentType("application/json");
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }

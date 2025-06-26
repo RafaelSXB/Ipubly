@@ -18,7 +18,7 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @PostMapping("/user")
+    @PostMapping("/user/register")
     public ResponseEntity<Object> createUser(@RequestBody UserRequestDTO user) {
 
            if(!userService.validateNewUser(user).isEmpty()){

@@ -38,7 +38,7 @@ public class SecuritySpringConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/login", "/auth/register").permitAll()
+                        .requestMatchers("/login/auth", "/user/register").permitAll()
                         .anyRequest().authenticated()
                 ).exceptionHandling((exceptions) ->
                         exceptions
