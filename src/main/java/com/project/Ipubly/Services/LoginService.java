@@ -20,9 +20,11 @@ public class LoginService {
 
     public LoginResponseDTO loginAuth(LoginRequestDTO loginRequestDTO) {
 
-       UserEntity user = usersRepository.findByUsername(loginRequestDTO.getUsername()).orElseThrow(
-                () -> new IllegalArgumentException("User not found with username: " + loginRequestDTO.getUsername())
-        );
+        if (loginRequestDTO.getUsername() == null || loginRequestDTO.getPassword() == null) {
+            return new LoginResponseDTO(null, null, "Username and Password are required");
+        }
+
+       UserEntity user = usersRepository.findByUsername(loginRequestDTO.getUsername()).orElse(new UserEntity());
 
         if (!verifyPassword(loginRequestDTO.getPassword(), user.getPassword())){
             return new LoginResponseDTO(loginRequestDTO.getUsername(), null, "Invalid Password");

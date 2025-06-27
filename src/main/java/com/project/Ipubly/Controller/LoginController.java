@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Optional;
+
 @RestController
 public class LoginController {
 
@@ -17,7 +19,8 @@ public class LoginController {
     private LoginService loginService;
 
     @PostMapping("/login/auth")
-    public ResponseEntity<LoginResponseDTO> login(@RequestBody LoginRequestDTO loginRequest) {
+    public ResponseEntity<LoginResponseDTO>login(@RequestBody(required = false) LoginRequestDTO loginRequest) {
+
         LoginResponseDTO responseDTO = loginService.loginAuth(loginRequest);
        if(responseDTO.getUsername() == null) {
            return ResponseEntity.badRequest().body(responseDTO);

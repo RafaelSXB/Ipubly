@@ -8,6 +8,7 @@ import com.project.Ipubly.Services.TwitterAuthTokenService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -20,6 +21,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.project.Ipubly.Services.regenareteTokenService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import javax.swing.plaf.synth.SynthTabbedPaneUI;
 import javax.ws.rs.Path;
 import java.net.URLEncoder;
 import java.util.Date;
@@ -47,10 +49,13 @@ public class SocialTokenAuthController {
             }
 
 
-          RedirectView teste = new RedirectView(authSocialTokenService.RedirectAuthToken(SocialAccount));
 
 
-            return "forward:/socialAccount/auth/save?teste=" + URLEncoder.encode(SocialAccount, StandardCharsets.UTF_8);
+
+
+            return "forward:/socialAccount/auth/" +
+                    URLEncoder.encode(SocialAccount, StandardCharsets.UTF_8 +
+                            URLEncoder.encode("/redirect", StandardCharsets.UTF_8));
 
 
         } catch (Exception e) {
@@ -59,7 +64,17 @@ public class SocialTokenAuthController {
         }
     }
 
-
+    @GetMapping("/twitter/redirect")
+    public RedirectView twitterAuthRedirect() {
+        try {
+            System.out.println(SecurityContextHolder.getContext().getAuthentication().getName());
+            String redirectUrl = authSocialTokenService.RedirectAuthToken("twitter", SecurityContextHolder.getContext().getAuthentication().getName());
+            return new RedirectView(redirectUrl);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new RedirectView("/socialAccount/auth/error?message=" + URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8));
+        }
+    }
     @GetMapping("/socialAccount/auth/error")
     @ResponseBody
     public ResponseEntity<Object> authError(@RequestParam(value = "message", required = false) String message) {
@@ -70,14 +85,6 @@ public class SocialTokenAuthController {
                 .body(errorResponse);
     }
 
-    @GetMapping("/twitter/callback")
-    @ResponseBody
-    public ResponseEntity<Object> twitterCallback(@RequestParam("code") String code) {
-        InterfaceSocialAuthTokenProvider interfaceSocialAuthTokenProvider = twitterAuthTokenService;
-        String response = interfaceSocialAuthTokenProvider.GeneratorSocialAuthToken(code);
-
-        return ResponseEntity.ok(response);
-    }
 
 
     @GetMapping("/save")
@@ -89,5 +96,14 @@ public class SocialTokenAuthController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error saving social auth token: " + e.getMessage());
         }
+    }
+
+    @GetMapping("/twitter/callback")
+    @ResponseBody
+    public ResponseEntity<Object> twitterCallback(@RequestParam("code") String code) {
+        InterfaceSocialAuthTokenProvider interfaceSocialAuthTokenProvider = twitterAuthTokenService;
+        String response = interfaceSocialAuthTokenProvider.GeneratorSocialAuthToken(code);
+
+        return ResponseEntity.ok(response);
     }
 }

@@ -11,10 +11,10 @@ public class AuthSocialTokenService {
         @Autowired
         private TwitterAuthTokenService twitterAuthTokenService;
 
-    public String RedirectAuthToken(String socialAccount) {
+    public String RedirectAuthToken(String socialAccount, String state) {
         switch (socialAccount.toLowerCase()) {
             case "twitter":
-               return twitterAuthTokenService.RedirectAuthToken();
+               return twitterAuthTokenService.RedirectAuthToken(state);
 
             default:
                  throw new IllegalArgumentException ("Não há support há rede social: " + socialAccount);

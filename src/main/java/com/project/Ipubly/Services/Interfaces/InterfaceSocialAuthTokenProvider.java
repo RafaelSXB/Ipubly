@@ -9,7 +9,7 @@ import java.util.Optional;
 
 public interface InterfaceSocialAuthTokenProvider{
 
-    public String RedirectAuthToken();
+    public String RedirectAuthToken(String state);
     public String GeneratorSocialAuthToken(String code);
     public String saveSocialAuthToken(AuthTokenSaveDTO authTokenSaveDTO) ;
 

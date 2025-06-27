@@ -48,14 +48,14 @@ public class TwitterAuthTokenService implements InterfaceSocialAuthTokenProvider
     private final String codeVerifier = "teste";
 
     @Override
-    public String RedirectAuthToken() {
+    public String RedirectAuthToken(String state) {
         String scopes = "tweet.read tweet.write users.read offline.access";
         String authUrl = "https://twitter.com/i/oauth2/authorize?" +
                 "response_type=code" +
                 "&client_id=" + clientId +
                 "&redirect_uri=" + URLEncoder.encode(redirectUri, StandardCharsets.UTF_8) +
                 "&scope=" + URLEncoder.encode(scopes, StandardCharsets.UTF_8) +
-                "&state=ipubly125" +
+                "&state=" + state +
                 "&code_challenge=" + codeVerifier +
                 "&code_challenge_method=plain";
         ;
