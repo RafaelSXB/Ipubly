@@ -18,7 +18,7 @@ public class AuthTokenSaveDTO {
     private String refreshToken;
     private String scope;
     private Provider provider;
-    private UserEntity user;
+    private UUID user;
     private OffsetDateTime expiresAt;
 
 }

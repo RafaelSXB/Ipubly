@@ -8,7 +8,9 @@ import com.project.Ipubly.Model.AuthTokenEntity;
 import com.project.Ipubly.Model.DTO.AuthTokenSaveDTO;
 
 import com.project.Ipubly.Model.Enum.Provider;
+import com.project.Ipubly.Model.UserEntity;
 import com.project.Ipubly.Repository.AuthTokenRepository;
+import com.project.Ipubly.Repository.UsersRepository;
 import com.project.Ipubly.Services.Interfaces.InterfaceSocialAuthTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +18,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -27,6 +30,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Date;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -44,6 +48,9 @@ public class TwitterAuthTokenService implements InterfaceSocialAuthTokenProvider
 
     @Value("${twitter.access.client.id}")
     private String clientId;
+
+    @Autowired
+    private UsersRepository usersRepository;
 
     private final String codeVerifier = "teste";
 
@@ -64,7 +71,7 @@ public class TwitterAuthTokenService implements InterfaceSocialAuthTokenProvider
 
 
     @Override
-    public String GeneratorSocialAuthToken(String code) {
+    public AuthTokenSaveDTO GeneratorSocialAuthToken(String code) {
         String tokenUrl = "https://api.twitter.com/2/oauth2/token";
 
         RestTemplate restTemplate = new RestTemplate();
@@ -95,42 +102,67 @@ public class TwitterAuthTokenService implements InterfaceSocialAuthTokenProvider
             expire += expireTime;
             expire -= 600000L;
             OffsetDateTime expireDate = OffsetDateTime.ofInstant(new Date(expire).toInstant(), ZoneId.of("America/Sao_Paulo"));
-            System.out.println("Token expires at: " + expireDate);
-            System.out.println(tokenNew.get("access_token"));
-            System.out.println(tokenNew.get("refresh_token"));
-            System.out.println(tokenNew.get("expires_in"));
             AuthTokenSaveDTO authTokenSaveDTO = new AuthTokenSaveDTO();
             authTokenSaveDTO.setAccessToken(tokenNew.get("access_token").asText());
             authTokenSaveDTO.setRefreshToken(tokenNew.get("refresh_token").asText());
             authTokenSaveDTO.setScope(tokenNew.get("scope").asText());
             authTokenSaveDTO.setProvider(Provider.TWITTER);
             authTokenSaveDTO.setExpiresAt(expireDate);
+            authTokenSaveDTO.setUser(UUID.fromString(SecurityContextHolder.getContext().getAuthentication().getName()));
 
-
+            System.out.println("AuthTokenSaveDTO: " + authTokenSaveDTO.toString());
+            return authTokenSaveDTO;
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
-        if (response.getStatusCode().is2xxSuccessful()) {
-            return response.getBody();
-        } else {
-            throw new RuntimeException("Failed to get access token: " + response.getStatusCode());
-        }
+        return new AuthTokenSaveDTO();
     }
 
     @Override
     public String saveSocialAuthToken(AuthTokenSaveDTO authTokenSaveDTO) {
         if (!(authTokenSaveDTO == null)) {
-            AuthTokenEntity authTokenEntity = new AuthTokenEntity();
-            authTokenEntity.setAccessToken(authTokenSaveDTO.getAccessToken());
-            authTokenEntity.setRefreshToken(authTokenSaveDTO.getRefreshToken());
-            authTokenEntity.setScope(authTokenSaveDTO.getScope());
-            authTokenEntity.setProvider(authTokenSaveDTO.getProvider());
-            authTokenEntity.setUser(authTokenSaveDTO.getUser());
 
-            authTokenRepository.save(authTokenEntity);
-            throw new IllegalArgumentException("AuthTokenSaveDTO or userId cannot be null");
+            Optional<UserEntity> userOptional = usersRepository.findById(authTokenSaveDTO.getUser());
+            if (userOptional.isPresent()) {
+                UserEntity user = userOptional.get();
+                AuthTokenEntity authTokenEntity = new AuthTokenEntity();
+                authTokenEntity.setAccessToken(authTokenSaveDTO.getAccessToken());
+                authTokenEntity.setRefreshToken(authTokenSaveDTO.getRefreshToken());
+                authTokenEntity.setScope(authTokenSaveDTO.getScope());
+                authTokenEntity.setProvider(authTokenSaveDTO.getProvider());
+                authTokenEntity.setUser(user);
+                authTokenEntity.setExpiresAt(authTokenSaveDTO.getExpiresAt());
+                authTokenRepository.save(authTokenEntity);
+
+                RestTemplate restTemplate = new RestTemplate();
+                HttpHeaders headers = new HttpHeaders();
+                headers.set("Authorization: ", "Bearer " + authTokenEntity.getAccessToken());
+
+                HttpEntity<Map<String, String>> entity = new HttpEntity<>(headers);
+                ResponseEntity<JsonNode> response = restTemplate.getForEntity(
+                        "https://api.twitter.com/2/users/me",
+                        JsonNode.class, entity
+                );
+
+                System.out.println(response.getBody().get("name").asText());
+
+            } else {
+                throw new IllegalArgumentException("User not found for the provided userId");
+            }
         }
         return "Auth token saved successfully";
     }
 
+    @Override
+    public String saveSocialAccount(AuthTokenEntity authTokenEntity, UserEntity userEntity) {
+        if (authTokenEntity != null && userEntity != null) {
+            authTokenEntity.setUser(userEntity);
+            authTokenRepository.save(authTokenEntity);
+            return "Social account saved successfully";
+        } else {
+            throw new IllegalArgumentException("Auth token entity or user entity cannot be null");
+        }
+    }
+
 }
+

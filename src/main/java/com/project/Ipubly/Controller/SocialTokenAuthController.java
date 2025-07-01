@@ -1,5 +1,6 @@
 package com.project.Ipubly.Controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.Ipubly.Model.UserEntity;
 import com.project.Ipubly.Repository.UsersRepository;
 import com.project.Ipubly.Services.AuthSocialTokenService;
@@ -41,6 +42,9 @@ public class SocialTokenAuthController {
     @Autowired
     TwitterAuthTokenService twitterAuthTokenService;
 
+    @Autowired
+    ObjectMapper objectMapper;
+
     @GetMapping("/{socialAccount}/redirect")
     public String authRedirect(@PathVariable("socialAccount") String SocialAccount) {
         try {
@@ -49,13 +53,7 @@ public class SocialTokenAuthController {
             }
 
 
-
-
-
-
-            return "forward:/socialAccount/auth/" +
-                    URLEncoder.encode(SocialAccount, StandardCharsets.UTF_8 +
-                            URLEncoder.encode("/redirect", StandardCharsets.UTF_8));
+            return "forward:/socialAccount/auth/" + URLEncoder.encode(SocialAccount, StandardCharsets.UTF_8 + URLEncoder.encode("/redirect", StandardCharsets.UTF_8));
 
 
         } catch (Exception e) {
@@ -75,35 +73,38 @@ public class SocialTokenAuthController {
             return new RedirectView("/socialAccount/auth/error?message=" + URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8));
         }
     }
+
     @GetMapping("/socialAccount/auth/error")
-    @ResponseBody
     public ResponseEntity<Object> authError(@RequestParam(value = "message", required = false) String message) {
         Map<String, String> errorResponse = new HashMap<>();
         errorResponse.put("error", "Erro ao redirecionar para a autenticação da rede social.");
         errorResponse.put("message", message);
-        return ResponseEntity.badRequest()
-                .body(errorResponse);
+        return ResponseEntity.badRequest().body(errorResponse);
     }
 
+    @GetMapping("/twitter/callback")
+    public String twitterCallback(@RequestParam("code") String code) throws JsonProcessingException {
+        InterfaceSocialAuthTokenProvider interfaceSocialAuthTokenProvider = twitterAuthTokenService;
+        String response = objectMapper.writeValueAsString(interfaceSocialAuthTokenProvider.GeneratorSocialAuthToken(code));
 
+        return "forward:/socialAccount/auth/save" + "?teste=" + URLEncoder.encode(response, StandardCharsets.UTF_8);
+
+    }
 
     @GetMapping("/save")
     @ResponseBody
-    public ResponseEntity<Object> saveSocialAuthToken(@RequestParam (value = "teste", required = false) String test) {
+    public ResponseEntity<Object> saveSocialAuthToken(@RequestParam(value = "teste", required = false) String test) {
         try {
             System.out.println("Entrou no saveSocialAuthToken" + test);
+
+            JsonNode jsonNode = new JsonMapper().readTree(test);
+
+            System.out.println("JsonNode: " + jsonNode);
             return ResponseEntity.ok("Social auth token saved successfully");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error saving social auth token: " + e.getMessage());
         }
     }
 
-    @GetMapping("/twitter/callback")
-    @ResponseBody
-    public ResponseEntity<Object> twitterCallback(@RequestParam("code") String code) {
-        InterfaceSocialAuthTokenProvider interfaceSocialAuthTokenProvider = twitterAuthTokenService;
-        String response = interfaceSocialAuthTokenProvider.GeneratorSocialAuthToken(code);
 
-        return ResponseEntity.ok(response);
-    }
 }
