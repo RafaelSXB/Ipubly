@@ -24,8 +24,7 @@ public class schedulerService {
 
     private static final Logger logger = Logger.getLogger(schedulerService.class.getName());
 
-    @Autowired
-    private TwitterSearchService twitterSearchService;
+
 
     @Autowired
     private GeminiApiService geminiApiService;

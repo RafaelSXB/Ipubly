@@ -5,19 +5,18 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import com.project.Ipubly.Model.AuthTokenEntity;
+import com.project.Ipubly.Model.DTO.AuthTokenResponseDTO;
 import com.project.Ipubly.Model.DTO.AuthTokenSaveDTO;
 
 import com.project.Ipubly.Model.Enum.Provider;
+import com.project.Ipubly.Model.SocialAccountEntity;
 import com.project.Ipubly.Model.UserEntity;
 import com.project.Ipubly.Repository.AuthTokenRepository;
 import com.project.Ipubly.Repository.UsersRepository;
 import com.project.Ipubly.Services.Interfaces.InterfaceSocialAuthTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -119,48 +118,89 @@ public class TwitterAuthTokenService implements InterfaceSocialAuthTokenProvider
     }
 
     @Override
-    public String saveSocialAuthToken(AuthTokenSaveDTO authTokenSaveDTO) {
-        if (!(authTokenSaveDTO == null)) {
+    public AuthTokenResponseDTO saveSocialAuthToken(String saveDTO) throws JsonProcessingException {
 
-            Optional<UserEntity> userOptional = usersRepository.findById(authTokenSaveDTO.getUser());
-            if (userOptional.isPresent()) {
-                UserEntity user = userOptional.get();
-                AuthTokenEntity authTokenEntity = new AuthTokenEntity();
-                authTokenEntity.setAccessToken(authTokenSaveDTO.getAccessToken());
-                authTokenEntity.setRefreshToken(authTokenSaveDTO.getRefreshToken());
-                authTokenEntity.setScope(authTokenSaveDTO.getScope());
-                authTokenEntity.setProvider(authTokenSaveDTO.getProvider());
-                authTokenEntity.setUser(user);
-                authTokenEntity.setExpiresAt(authTokenSaveDTO.getExpiresAt());
-                authTokenRepository.save(authTokenEntity);
+        JsonNode JsonSaveDTO = new JsonMapper().readTree(saveDTO);
 
-                RestTemplate restTemplate = new RestTemplate();
-                HttpHeaders headers = new HttpHeaders();
-                headers.set("Authorization: ", "Bearer " + authTokenEntity.getAccessToken());
+        AuthTokenSaveDTO authTokenSaveDTO = new AuthTokenSaveDTO();
+        authTokenSaveDTO.setAccessToken(JsonSaveDTO.get("accessToken").asText());
+        authTokenSaveDTO.setRefreshToken(JsonSaveDTO.get("refreshToken").asText());
+        authTokenSaveDTO.setScope(JsonSaveDTO.get("scope").asText());
+        authTokenSaveDTO.setProvider(Provider.valueOf(JsonSaveDTO.get("provider").asText()));
+        authTokenSaveDTO.setExpiresAt(OffsetDateTime.parse(JsonSaveDTO.get("expiresAt").asText()));
+        authTokenSaveDTO.setUser(UUID.fromString(SecurityContextHolder.getContext().getAuthentication().getName()));
 
-                HttpEntity<Map<String, String>> entity = new HttpEntity<>(headers);
-                ResponseEntity<JsonNode> response = restTemplate.getForEntity(
-                        "https://api.twitter.com/2/users/me",
-                        JsonNode.class, entity
-                );
+        Optional<UserEntity> userOptional = usersRepository.findById(authTokenSaveDTO.getUser());
+        AuthTokenResponseDTO authTokenResponseDTO;
+        if (userOptional.isPresent()) {
+            UserEntity user = userOptional.get();
+            AuthTokenEntity authTokenEntity = new AuthTokenEntity();
+            authTokenEntity.setAccessToken(authTokenSaveDTO.getAccessToken());
+            authTokenEntity.setRefreshToken(authTokenSaveDTO.getRefreshToken());
+            authTokenEntity.setScope(authTokenSaveDTO.getScope());
+            authTokenEntity.setProvider(authTokenSaveDTO.getProvider());
+            authTokenEntity.setUser(user);
+            authTokenEntity.setExpiresAt(authTokenSaveDTO.getExpiresAt());
+            authTokenRepository.save(authTokenEntity);
 
-                System.out.println(response.getBody().get("name").asText());
+            RestTemplate restTemplate = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            System.out.println(authTokenEntity.getAccessToken());
+            headers.setBearerAuth(authTokenEntity.getAccessToken());
 
+            HttpEntity<Map<String, String>> entity = new HttpEntity<>(headers);
+
+            System.out.println(entity);
+            System.out.println(headers);
+            ResponseEntity<JsonNode> response = restTemplate.exchange(
+                    "https://api.twitter.com/2/users/me",
+                    HttpMethod.GET,
+                    entity,
+                    JsonNode.class
+            );
+
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                JsonNode userInfo = response.getBody();
+                if (userInfo != null) {
+                    String twitterUsername = userInfo.get("data").get("username").asText();
+                    if (saveSocialAccount(authTokenEntity, user, twitterUsername)) {
+                        authTokenResponseDTO = new AuthTokenResponseDTO();
+                        authTokenResponseDTO.setSocialName(twitterUsername);
+                        authTokenResponseDTO.setUsername(user.getUsername());
+                        authTokenResponseDTO.setScope(authTokenEntity.getScope());
+                        authTokenResponseDTO.setProvider(authTokenEntity.getProvider().name());
+                        authTokenResponseDTO.setMessage("Auth token saved successfully");
+
+                    } else {
+                        throw new IllegalArgumentException("Failed to save social account");
+                    }
+
+                } else {
+                    throw new IllegalArgumentException("Failed to retrieve user information from Twitter");
+                }
             } else {
-                throw new IllegalArgumentException("User not found for the provided userId");
+                throw new IllegalArgumentException("Failed to connect to Twitter API: " + response.getStatusCode());
             }
+
+        } else {
+            throw new IllegalArgumentException("User not found for the provided userId");
         }
-        return "Auth token saved successfully";
+        return authTokenResponseDTO;
     }
 
     @Override
-    public String saveSocialAccount(AuthTokenEntity authTokenEntity, UserEntity userEntity) {
+    public Boolean saveSocialAccount(AuthTokenEntity authTokenEntity, UserEntity userEntity, String name) {
         if (authTokenEntity != null && userEntity != null) {
-            authTokenEntity.setUser(userEntity);
+            SocialAccountEntity socialAccountEntity = new SocialAccountEntity();
+            socialAccountEntity.setUser(userEntity);
+            socialAccountEntity.setProvider(authTokenEntity.getProvider());
+            socialAccountEntity.setOauthToken(authTokenEntity);
+            socialAccountEntity.setName(name);
             authTokenRepository.save(authTokenEntity);
-            return "Social account saved successfully";
+            return true;
         } else {
-            throw new IllegalArgumentException("Auth token entity or user entity cannot be null");
+           return false;
         }
     }
 

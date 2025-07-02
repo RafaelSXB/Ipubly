@@ -1,43 +1,37 @@
 package com.project.Ipubly.Controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.project.Ipubly.Model.UserEntity;
-import com.project.Ipubly.Repository.UsersRepository;
-import com.project.Ipubly.Services.AuthSocialTokenService;
+import com.project.Ipubly.Model.DTO.AuthTokenResponseDTO;
+import com.project.Ipubly.Model.DTO.AuthTokenSaveDTO;
+import com.project.Ipubly.Model.Enum.Provider;
 import com.project.Ipubly.Services.Interfaces.InterfaceSocialAuthTokenProvider;
 import com.project.Ipubly.Services.TwitterAuthTokenService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.view.RedirectView;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.project.Ipubly.Services.regenareteTokenService;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import javax.swing.plaf.synth.SynthTabbedPaneUI;
-import javax.ws.rs.Path;
+
 import java.net.URLEncoder;
-import java.util.Date;
+
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Controller
 @RequestMapping({"/socialAccount/auth"})
 public class SocialTokenAuthController {
     @Autowired
     private mainController mainController;
-
-    @Autowired
-    AuthSocialTokenService authSocialTokenService;
 
     @Autowired
     TwitterAuthTokenService twitterAuthTokenService;
@@ -65,8 +59,7 @@ public class SocialTokenAuthController {
     @GetMapping("/twitter/redirect")
     public RedirectView twitterAuthRedirect() {
         try {
-            System.out.println(SecurityContextHolder.getContext().getAuthentication().getName());
-            String redirectUrl = authSocialTokenService.RedirectAuthToken("twitter", SecurityContextHolder.getContext().getAuthentication().getName());
+            String redirectUrl = twitterAuthTokenService.RedirectAuthToken(SecurityContextHolder.getContext().getAuthentication().getName());
             return new RedirectView(redirectUrl);
         } catch (Exception e) {
             e.printStackTrace();
@@ -93,16 +86,18 @@ public class SocialTokenAuthController {
 
     @GetMapping("/save")
     @ResponseBody
-    public ResponseEntity<Object> saveSocialAuthToken(@RequestParam(value = "teste", required = false) String test) {
+    public ResponseEntity<AuthTokenResponseDTO> saveSocialAuthToken(@RequestParam(value = "teste", required = false) String test) {
         try {
-            System.out.println("Entrou no saveSocialAuthToken" + test);
 
-            JsonNode jsonNode = new JsonMapper().readTree(test);
+            InterfaceSocialAuthTokenProvider socialAuthToken = twitterAuthTokenService;
+           AuthTokenResponseDTO authTokenResponseDTO = socialAuthToken.saveSocialAuthToken(test);
 
-            System.out.println("JsonNode: " + jsonNode);
-            return ResponseEntity.ok("Social auth token saved successfully");
+            return ResponseEntity.ok(authTokenResponseDTO);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error saving social auth token: " + e.getMessage());
+            e.printStackTrace();
+            AuthTokenResponseDTO authTokenResponseDTO = new AuthTokenResponseDTO();
+            authTokenResponseDTO.setMessage("Failed to save social account token:  " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new AuthTokenResponseDTO());
         }
     }
 

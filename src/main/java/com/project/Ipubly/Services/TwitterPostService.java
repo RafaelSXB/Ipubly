@@ -1,11 +1,6 @@
 package com.project.Ipubly.Services;
 
 import com.project.Ipubly.Repository.UsersRepository;
-import com.twitter.clientlib.model.TweetCreateRequest;
-import com.twitter.clientlib.TwitterCredentialsOAuth2;
-import com.twitter.clientlib.api.TwitterApi;
-import com.twitter.clientlib.model.TweetCreateResponse;
-import com.twitter.clientlib.ApiException;
 
 import java.util.Optional;
 import java.util.ArrayList;

@@ -8,10 +8,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AuthTokenResponseDTO {
-    private String accessToken;
-    private String refreshToken;
+    private String socialName;
+    private String username;
     private String scope;
     private String provider;
-    private String userId;
-    private String expiresAt;
+    private String message;
+
 }
