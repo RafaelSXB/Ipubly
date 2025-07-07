@@ -12,13 +12,17 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class AuthTokenSaveDTO {
+public class SaveSocialAccountDTO {
 
+    private UUID id;
+    private UUID user;
+    private String name;
     private String accessToken;
     private String refreshToken;
     private String scope;
     private Provider provider;
-    private UUID user;
+    private Integer provider_social_id;
+    private Boolean isActive;
     private OffsetDateTime expiresAt;
 
 }

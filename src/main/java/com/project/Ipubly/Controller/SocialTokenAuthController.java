@@ -1,8 +1,9 @@
 package com.project.Ipubly.Controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.project.Ipubly.Model.DTO.AuthTokenResponseDTO;
-import com.project.Ipubly.Model.DTO.AuthTokenSaveDTO;
+import com.project.Ipubly.Model.DTO.SaveSocialAccountDTO;
+import com.project.Ipubly.Model.DTO.SaveSocialAccountDTO;
+import com.project.Ipubly.Model.DTO.SocialAccountResponseDTO;
 import com.project.Ipubly.Model.Enum.Provider;
 import com.project.Ipubly.Services.Interfaces.InterfaceSocialAuthTokenProvider;
 import com.project.Ipubly.Services.TwitterAuthTokenService;
@@ -86,18 +87,18 @@ public class SocialTokenAuthController {
 
     @GetMapping("/save")
     @ResponseBody
-    public ResponseEntity<AuthTokenResponseDTO> saveSocialAuthToken(@RequestParam(value = "teste", required = false) String test) {
+    public ResponseEntity<SocialAccountResponseDTO> saveSocialAuthToken(@RequestParam(value = "teste", required = false) String test) {
         try {
 
             InterfaceSocialAuthTokenProvider socialAuthToken = twitterAuthTokenService;
-           AuthTokenResponseDTO authTokenResponseDTO = socialAuthToken.saveSocialAuthToken(test);
+           SocialAccountResponseDTO SaveSocialAccountDTO = socialAuthToken.returnSocialAuthToken(test);
 
-            return ResponseEntity.ok(authTokenResponseDTO);
+            return ResponseEntity.ok(SaveSocialAccountDTO);
         } catch (Exception e) {
             e.printStackTrace();
-            AuthTokenResponseDTO authTokenResponseDTO = new AuthTokenResponseDTO();
-            authTokenResponseDTO.setMessage("Failed to save social account token:  " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new AuthTokenResponseDTO());
+            SocialAccountResponseDTO SaveSocialAccountDTO = new SocialAccountResponseDTO();
+            SaveSocialAccountDTO.setMessage("Failed to save social account token:  " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new SocialAccountResponseDTO());
         }
     }
 

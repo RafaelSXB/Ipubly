@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class AuthTokenResponseDTO {
+public class SocialAccountResponseDTO {
     private String socialName;
     private String username;
     private String scope;

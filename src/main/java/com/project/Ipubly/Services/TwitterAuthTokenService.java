@@ -2,18 +2,18 @@ package com.project.Ipubly.Services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-
-import com.project.Ipubly.Model.AuthTokenEntity;
-import com.project.Ipubly.Model.DTO.AuthTokenResponseDTO;
-import com.project.Ipubly.Model.DTO.AuthTokenSaveDTO;
-
-import com.project.Ipubly.Model.Enum.Provider;
+import com.project.Ipubly.Model.DTO.ProfileSocialAccountDTO;
+import com.project.Ipubly.Model.DTO.SocialAccountResponseDTO;
 import com.project.Ipubly.Model.SocialAccountEntity;
+import com.project.Ipubly.Model.DTO.SaveSocialAccountDTO;
+import com.project.Ipubly.Model.Enum.Provider;
 import com.project.Ipubly.Model.UserEntity;
-import com.project.Ipubly.Repository.AuthTokenRepository;
+import com.project.Ipubly.Repository.SocialAccountRepository;
 import com.project.Ipubly.Repository.UsersRepository;
 import com.project.Ipubly.Services.Interfaces.InterfaceSocialAuthTokenProvider;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -23,13 +23,11 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.util.Date;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -37,7 +35,10 @@ import java.util.UUID;
 public class TwitterAuthTokenService implements InterfaceSocialAuthTokenProvider {
 
     @Autowired
-    AuthTokenRepository authTokenRepository;
+    private SocialAccountRepository SocialAccountRepository;
+
+    @Autowired
+    ObjectMapper objectMapper;
 
     @Value("${twitter.access.client.secret}")
     private String clientSecret;
@@ -64,17 +65,14 @@ public class TwitterAuthTokenService implements InterfaceSocialAuthTokenProvider
                 "&state=" + state +
                 "&code_challenge=" + codeVerifier +
                 "&code_challenge_method=plain";
-        ;
         return authUrl;
     }
 
 
     @Override
-    public AuthTokenSaveDTO GeneratorSocialAuthToken(String code) {
+    public SaveSocialAccountDTO GeneratorSocialAuthToken(String code) {
         String tokenUrl = "https://api.twitter.com/2/oauth2/token";
-
         RestTemplate restTemplate = new RestTemplate();
-
         String credentials = clientId + ":" + clientSecret;
         String base64Credentials = java.util.Base64.getEncoder().encodeToString(credentials.getBytes());
 
@@ -84,125 +82,132 @@ public class TwitterAuthTokenService implements InterfaceSocialAuthTokenProvider
 
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.add("grant_type", "authorization_code");
-        body.add("code", String.valueOf(code));
+        body.add("code", code);
         body.add("redirect_uri", redirectUri);
         body.add("client_secret", clientSecret);
         body.add("code_verifier", codeVerifier);
 
-
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
-        System.out.println("Request: " + request);
-        System.out.println("Headers: " + headers);
         ResponseEntity<String> response = restTemplate.postForEntity(tokenUrl, request, String.class);
-        Long expire = new Date().getTime();
+
+        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            throw new IllegalArgumentException("Falha ao conectar-se à API do Twitter: " + response.getStatusCode());
+        }
         try {
             JsonNode tokenNew = JsonMapper.builder().build().readTree(response.getBody());
-            Long expireTime = tokenNew.get("expires_in").asLong() * 1000;
-            expire += expireTime;
-            expire -= 600000L;
-            OffsetDateTime expireDate = OffsetDateTime.ofInstant(new Date(expire).toInstant(), ZoneId.of("America/Sao_Paulo"));
-            AuthTokenSaveDTO authTokenSaveDTO = new AuthTokenSaveDTO();
-            authTokenSaveDTO.setAccessToken(tokenNew.get("access_token").asText());
-            authTokenSaveDTO.setRefreshToken(tokenNew.get("refresh_token").asText());
-            authTokenSaveDTO.setScope(tokenNew.get("scope").asText());
-            authTokenSaveDTO.setProvider(Provider.TWITTER);
-            authTokenSaveDTO.setExpiresAt(expireDate);
-            authTokenSaveDTO.setUser(UUID.fromString(SecurityContextHolder.getContext().getAuthentication().getName()));
+            long expireInSeconds = tokenNew.get("expires_in").asLong();
+            OffsetDateTime expireDate = OffsetDateTime.now(ZoneId.of("America/Sao_Paulo")).plusSeconds(expireInSeconds - 600);
 
-            System.out.println("AuthTokenSaveDTO: " + authTokenSaveDTO.toString());
-            return authTokenSaveDTO;
+            SaveSocialAccountDTO SaveSocialAccountDTO = new SaveSocialAccountDTO();
+            SaveSocialAccountDTO.setAccessToken(tokenNew.get("access_token").asText());
+            SaveSocialAccountDTO.setRefreshToken(tokenNew.get("refresh_token").asText());
+            SaveSocialAccountDTO.setScope(tokenNew.get("scope").asText());
+            SaveSocialAccountDTO.setProvider(Provider.TWITTER);
+            SaveSocialAccountDTO.setExpiresAt(expireDate);
+            SaveSocialAccountDTO.setUser(UUID.fromString(SecurityContextHolder.getContext().getAuthentication().getName()));
+
+            return SaveSocialAccountDTO;
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Erro ao processar a resposta do token do Twitter", e);
         }
-        return new AuthTokenSaveDTO();
     }
 
     @Override
-    public AuthTokenResponseDTO saveSocialAuthToken(String saveDTO) throws JsonProcessingException {
+    @Transactional 
+    public SocialAccountResponseDTO returnSocialAuthToken(String saveDTO) throws JsonProcessingException {
 
-        JsonNode JsonSaveDTO = new JsonMapper().readTree(saveDTO);
+        SaveSocialAccountDTO saveSocialAccountDTO = objectMapper.readValue(saveDTO, SaveSocialAccountDTO.class);
 
-        AuthTokenSaveDTO authTokenSaveDTO = new AuthTokenSaveDTO();
-        authTokenSaveDTO.setAccessToken(JsonSaveDTO.get("accessToken").asText());
-        authTokenSaveDTO.setRefreshToken(JsonSaveDTO.get("refreshToken").asText());
-        authTokenSaveDTO.setScope(JsonSaveDTO.get("scope").asText());
-        authTokenSaveDTO.setProvider(Provider.valueOf(JsonSaveDTO.get("provider").asText()));
-        authTokenSaveDTO.setExpiresAt(OffsetDateTime.parse(JsonSaveDTO.get("expiresAt").asText()));
-        authTokenSaveDTO.setUser(UUID.fromString(SecurityContextHolder.getContext().getAuthentication().getName()));
+       Optional<SocialAccountEntity> existingAccount = SocialAccountRepository.findByUserId_IdAndProvider(saveSocialAccountDTO.getUser(), saveSocialAccountDTO.getProvider());
+       Optional<UserEntity> userEntity = usersRepository.findById(saveSocialAccountDTO.getUser());
+       ProfileSocialAccountDTO profileSocialAccountDTO = getSocialAccountProfile(saveSocialAccountDTO.getAccessToken());
 
-        Optional<UserEntity> userOptional = usersRepository.findById(authTokenSaveDTO.getUser());
-        AuthTokenResponseDTO authTokenResponseDTO;
-        if (userOptional.isPresent()) {
-            UserEntity user = userOptional.get();
-            AuthTokenEntity authTokenEntity = new AuthTokenEntity();
-            authTokenEntity.setAccessToken(authTokenSaveDTO.getAccessToken());
-            authTokenEntity.setRefreshToken(authTokenSaveDTO.getRefreshToken());
-            authTokenEntity.setScope(authTokenSaveDTO.getScope());
-            authTokenEntity.setProvider(authTokenSaveDTO.getProvider());
-            authTokenEntity.setUser(user);
-            authTokenEntity.setExpiresAt(authTokenSaveDTO.getExpiresAt());
-            authTokenRepository.save(authTokenEntity);
+       SocialAccountEntity socialAccountEntity = new SocialAccountEntity();
+         if (existingAccount.isPresent()) {
+             socialAccountEntity = existingAccount.get();
+             saveSocialAccountDTO.setId(socialAccountEntity.getId());
 
-            RestTemplate restTemplate = new RestTemplate();
-            HttpHeaders headers = new HttpHeaders();
-            System.out.println(authTokenEntity.getAccessToken());
-            headers.setBearerAuth(authTokenEntity.getAccessToken());
+             return saveSocialAccount(userEntity.get(), saveSocialAccountDTO, profileSocialAccountDTO);
+         }
 
-            HttpEntity<Map<String, String>> entity = new HttpEntity<>(headers);
-
-            System.out.println(entity);
-            System.out.println(headers);
-            ResponseEntity<JsonNode> response = restTemplate.exchange(
-                    "https://api.twitter.com/2/users/me",
-                    HttpMethod.GET,
-                    entity,
-                    JsonNode.class
-            );
-
-
-            if (response.getStatusCode().is2xxSuccessful()) {
-                JsonNode userInfo = response.getBody();
-                if (userInfo != null) {
-                    String twitterUsername = userInfo.get("data").get("username").asText();
-                    if (saveSocialAccount(authTokenEntity, user, twitterUsername)) {
-                        authTokenResponseDTO = new AuthTokenResponseDTO();
-                        authTokenResponseDTO.setSocialName(twitterUsername);
-                        authTokenResponseDTO.setUsername(user.getUsername());
-                        authTokenResponseDTO.setScope(authTokenEntity.getScope());
-                        authTokenResponseDTO.setProvider(authTokenEntity.getProvider().name());
-                        authTokenResponseDTO.setMessage("Auth token saved successfully");
-
-                    } else {
-                        throw new IllegalArgumentException("Failed to save social account");
-                    }
-
-                } else {
-                    throw new IllegalArgumentException("Failed to retrieve user information from Twitter");
-                }
-            } else {
-                throw new IllegalArgumentException("Failed to connect to Twitter API: " + response.getStatusCode());
-            }
-
-        } else {
-            throw new IllegalArgumentException("User not found for the provided userId");
-        }
-        return authTokenResponseDTO;
+        return saveSocialAccount(userEntity.get(), saveSocialAccountDTO, profileSocialAccountDTO);
     }
+
+
+
+   @Override
+    public SocialAccountResponseDTO saveSocialAccount(UserEntity userEntity, SaveSocialAccountDTO saveSocialAccountDTO, ProfileSocialAccountDTO profileSocialAccountDTO) {
+
+       if (saveSocialAccountDTO.getId() == null) {
+           SocialAccountEntity socialAccountEntity = new SocialAccountEntity();
+
+           socialAccountEntity.setUserId(userEntity);
+           socialAccountEntity.setProvider(saveSocialAccountDTO.getProvider());
+           socialAccountEntity.setAccessToken(saveSocialAccountDTO.getAccessToken());
+           socialAccountEntity.setRefreshToken(saveSocialAccountDTO.getRefreshToken());
+           socialAccountEntity.setScope(saveSocialAccountDTO.getScope());
+           socialAccountEntity.setExpiresAt(saveSocialAccountDTO.getExpiresAt());
+           socialAccountEntity.setIsActive(true);
+           socialAccountEntity.setName(profileSocialAccountDTO.getSocialName());
+           socialAccountEntity.setProviderAccountId(profileSocialAccountDTO.getSocialId());
+
+           SocialAccountRepository.save(socialAccountEntity);
+
+           SocialAccountResponseDTO socialAccountResponseDTO = new SocialAccountResponseDTO();
+           socialAccountResponseDTO.setMessage("Social account saved successfully.");
+           socialAccountResponseDTO.setUsername(userEntity.getUsername());
+           socialAccountResponseDTO.setProvider(socialAccountEntity.getProvider().toString());
+           socialAccountResponseDTO.setScope(socialAccountEntity.getScope());
+
+           return socialAccountResponseDTO;
+       }
+
+       SocialAccountEntity socialAccountEntity = new SocialAccountEntity();
+       socialAccountEntity.setId(saveSocialAccountDTO.getId());
+       socialAccountEntity.setUserId(userEntity);
+       socialAccountEntity.setAccessToken(saveSocialAccountDTO.getAccessToken());
+       socialAccountEntity.setRefreshToken(saveSocialAccountDTO.getRefreshToken());
+       socialAccountEntity.setScope(saveSocialAccountDTO.getScope());
+       socialAccountEntity.setExpiresAt(saveSocialAccountDTO.getExpiresAt());
+       socialAccountEntity.setIsActive(true);
+       socialAccountEntity.setProvider(saveSocialAccountDTO.getProvider());
+       socialAccountEntity.setName(profileSocialAccountDTO.getSocialName());
+       socialAccountEntity.setProviderAccountId(profileSocialAccountDTO.getSocialId());
+
+       SocialAccountRepository.save(socialAccountEntity);
+
+       SocialAccountResponseDTO SaveSocialAccountDTO = new SocialAccountResponseDTO();
+       SaveSocialAccountDTO.setMessage("Social account updated successfully.");
+       SaveSocialAccountDTO.setUsername(userEntity.getUsername());
+       SaveSocialAccountDTO.setProvider(socialAccountEntity.getProvider().toString());
+       SaveSocialAccountDTO.setScope(socialAccountEntity.getScope());
+       SaveSocialAccountDTO.setSocialName(socialAccountEntity.getName());
+
+         return SaveSocialAccountDTO;
+   }
 
     @Override
-    public Boolean saveSocialAccount(AuthTokenEntity authTokenEntity, UserEntity userEntity, String name) {
-        if (authTokenEntity != null && userEntity != null) {
-            SocialAccountEntity socialAccountEntity = new SocialAccountEntity();
-            socialAccountEntity.setUser(userEntity);
-            socialAccountEntity.setProvider(authTokenEntity.getProvider());
-            socialAccountEntity.setOauthToken(authTokenEntity);
-            socialAccountEntity.setName(name);
-            authTokenRepository.save(authTokenEntity);
-            return true;
-        } else {
-           return false;
-        }
-    }
+    public ProfileSocialAccountDTO getSocialAccountProfile(String accessToken) {
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
 
+        ResponseEntity<JsonNode> response = restTemplate.exchange(
+                "https://api.twitter.com/2/users/me",
+                HttpMethod.GET,
+                entity,
+                JsonNode.class
+        );
+
+        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            throw new IllegalArgumentException("Falha ao conectar-se à API do Twitter ou obter informações do usuário: " + response.getStatusCode());
+        }
+        ProfileSocialAccountDTO profile = new ProfileSocialAccountDTO();
+        JsonNode userInfo = response.getBody().get("data");
+        profile.setSocialId(userInfo.get("id").asText());
+        profile.setSocialName(userInfo.get("username").asText());
+
+        return profile;
+    }
 }
-
