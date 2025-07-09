@@ -1,5 +1,6 @@
 package com.project.Ipubly.Services;
 
+import com.project.Ipubly.Config.ExceptionAPI;
 import com.project.Ipubly.Model.DTO.LoginRequestDTO;
 import com.project.Ipubly.Model.DTO.LoginResponseDTO;
 import com.project.Ipubly.Model.UserEntity;
@@ -21,13 +22,13 @@ public class LoginService {
     public LoginResponseDTO loginAuth(LoginRequestDTO loginRequestDTO) {
 
         if (loginRequestDTO.getUsername() == null || loginRequestDTO.getPassword() == null) {
-            return new LoginResponseDTO(null, null, "Username and Password are required");
+            throw new ExceptionAPI("Username and Password are required");
         }
 
        UserEntity user = usersRepository.findByUsername(loginRequestDTO.getUsername()).orElse(new UserEntity());
 
         if (!verifyPassword(loginRequestDTO.getPassword(), user.getPassword())){
-            return new LoginResponseDTO(loginRequestDTO.getUsername(), null, "Invalid Password");
+            throw new ExceptionAPI("Invalid Password or Username");
 
         };
 

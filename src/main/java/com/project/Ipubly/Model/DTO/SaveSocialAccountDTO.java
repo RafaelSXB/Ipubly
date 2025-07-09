@@ -1,7 +1,6 @@
 package com.project.Ipubly.Model.DTO;
 
 import com.project.Ipubly.Model.Enum.Provider;
-import com.project.Ipubly.Model.UserEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

@@ -1,5 +1,6 @@
 package com.project.Ipubly.Services;
 
+import com.project.Ipubly.Config.ExceptionAPI;
 import com.project.Ipubly.Model.DTO.UserRequestDTO;
 import com.project.Ipubly.Model.DTO.UserResponseDTO;
 import com.project.Ipubly.Model.UserEntity;
@@ -40,32 +41,27 @@ public class UserService {
         return password;
     }
 
-    public List<String> validateNewUser(UserRequestDTO userRequestDTO) {
-        Optional<UserEntity> existingUser = usersRepository.findByUsername(userRequestDTO.getUsername());
-        if (existingUser.isPresent())
-        {
-            return List.of("Username already exists");
+    public void validateNewUser(UserRequestDTO userRequestDTO) {
+        Optional<UserEntity> existingUser = usersRepository.findByUsernameOrEmail(userRequestDTO.getUsername(), userRequestDTO.getEmail());
+        if (existingUser.isPresent()) {
+            if (existingUser.get().getUsername().equals(userRequestDTO.getUsername())) {
+                throw new ExceptionAPI("Username already exists");
+            }
+            throw new ExceptionAPI("Email already exists");
         }
-
-        List<String> errors = new ArrayList<>();
 
         if (userRequestDTO.getUsername() == null || userRequestDTO.getUsername().isEmpty()) {
-            errors.add("Username is required");
+            throw new ExceptionAPI("Username is required");
         }
         if (userRequestDTO.getName() == null || userRequestDTO.getName().isEmpty()) {
-            errors.add("Name is required");
+            throw new ExceptionAPI("Name is required");
         }
         if (userRequestDTO.getEmail() == null || userRequestDTO.getEmail().isEmpty()) {
-            errors.add("Email is required");
+            throw new ExceptionAPI("Email is required");
         }
         if (userRequestDTO.getPassword() == null || userRequestDTO.getPassword().isEmpty()) {
-            errors.add("Password is required");
+            throw new ExceptionAPI("Password is required");
         }
-
-        if (!errors.isEmpty()) {
-            return errors;
-        }
-        return List.of();
     }
 
 

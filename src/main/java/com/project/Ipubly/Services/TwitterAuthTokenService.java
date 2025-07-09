@@ -91,7 +91,7 @@ public class TwitterAuthTokenService implements InterfaceSocialAuthTokenProvider
         ResponseEntity<String> response = restTemplate.postForEntity(tokenUrl, request, String.class);
 
         if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-            throw new IllegalArgumentException("Falha ao conectar-se à API do Twitter: " + response.getStatusCode());
+            throw new IllegalArgumentException("Failed to connect to the Twitter API: " + response.getStatusCode());
         }
         try {
             JsonNode tokenNew = JsonMapper.builder().build().readTree(response.getBody());
@@ -108,7 +108,7 @@ public class TwitterAuthTokenService implements InterfaceSocialAuthTokenProvider
 
             return SaveSocialAccountDTO;
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Erro ao processar a resposta do token do Twitter", e);
+            throw new RuntimeException("Error processing Twitter token response", e);
         }
     }
 
@@ -201,7 +201,7 @@ public class TwitterAuthTokenService implements InterfaceSocialAuthTokenProvider
         );
 
         if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-            throw new IllegalArgumentException("Falha ao conectar-se à API do Twitter ou obter informações do usuário: " + response.getStatusCode());
+            throw new IllegalArgumentException("Failed to connect to the Twitter API or retrieve user information: " + response.getStatusCode() + response.getBody());
         }
         ProfileSocialAccountDTO profile = new ProfileSocialAccountDTO();
         JsonNode userInfo = response.getBody().get("data");

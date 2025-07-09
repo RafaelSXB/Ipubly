@@ -21,12 +21,7 @@ public class UserController {
     @PostMapping("/user/register")
     public ResponseEntity<Object> createUser(@RequestBody UserRequestDTO user) {
 
-           if(!userService.validateNewUser(user).isEmpty()){
-               Map<String, List<String>> errors = new HashMap<>();
-               errors.put("errors", userService.validateNewUser(user));
-               return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
-            }
-
+        userService.validateNewUser(user);
         UserResponseDTO userResponse = userService.addNewUser(user);
         return ResponseEntity.status(201).body(userResponse);
     }
