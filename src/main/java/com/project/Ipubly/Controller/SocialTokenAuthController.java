@@ -31,8 +31,6 @@ import java.util.UUID;
 @Controller
 @RequestMapping({"/socialAccount/auth"})
 public class SocialTokenAuthController {
-    @Autowired
-    private mainController mainController;
 
     @Autowired
     TwitterAuthTokenService twitterAuthTokenService;
